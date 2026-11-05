@@ -41,6 +41,7 @@ dependencies = [
   "cel-python>=0.5.0,<0.6",
   "celery>=5.6.3,<6",
   "celery-redbeat>=2.4.2,<3",
+  "convergent-sdk==0.0.11",
   "croniter>=6.2.4,<7",
   "cryptography>=50.0.2,<51",
   "dataclasses-json>=0.6.7,<0.7",

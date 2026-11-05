@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from typing import Any, Callable, Dict, Generator, Iterator, List, Optional
 
 from docsgpt import tracing
+from docsgpt.tracing.content import capture, enabled as capture_enabled, text_message
 from docsgpt.core.run_budget import is_budget_exhausted
 from docsgpt.core import log_context
 from docsgpt.storage.db.repositories.stack_logs import StackLogsRepository
@@ -43,6 +44,8 @@ class LogContext:
         # reporting ``status="ok"`` on a turn the user saw fail — that gap is
         # why blank-answer incidents did not show up in error dashboards.
         self.stream_error: str | None = None
+        self.trace_answer: list[str] = []
+        self.trace_deliverables: Dict[str, Any] = {}
 
 
 def build_stack_data(
@@ -177,6 +180,9 @@ def log_activity() -> Callable:
             # a webhook/system Logs row (keyed by activity_id) finds its trace.
             tracing.bind_if_unset(activity_id=activity_id)
             span = start_agent_span(args[0], agent_id=agent_id, model=model, endpoint=endpoint)
+            capture(span, **{"gen_ai.input.messages": text_message(
+                args[1] if len(args) > 1 else query, "user"
+            )})
 
             error: BaseException | None = None
             completed = False
@@ -246,6 +252,7 @@ def start_agent_span(
             k: v
             for k, v in {
                 "gen_ai.operation.name": "invoke_agent",
+                "gen_ai.agent.name": label,
                 "gen_ai.agent.id": str(agent_id) if agent_id else None,
                 "gen_ai.request.model": str(model) if model else None,
                 "docsgpt.agent_type": label,
@@ -266,6 +273,11 @@ def _end_agent_span(span: Any, context: "LogContext", *, error: BaseException | 
         "docsgpt.source_count": context.source_count,
         "docsgpt.tool_call_count": context.tool_call_count,
     }
+    capture(span, **{"gen_ai.output.messages": text_message({
+        "answer": "".join(context.trace_answer),
+        **context.trace_deliverables,
+        "status": "error" if error or context.stream_error else "completed" if completed else "cancelled",
+    })})
     if error is not None:
         span.end(error=error, attributes=attributes)
     elif context.stream_error:
@@ -342,6 +354,12 @@ def _accumulate_response_summary(item: Any, context: "LogContext") -> None:
 def _consume_and_log(generator: Generator, context: "LogContext"):
     try:
         for item in generator:
+            if capture_enabled() and isinstance(item, dict):
+                if "answer" in item:
+                    context.trace_answer.append(str(item["answer"]))
+                for key in ("sources", "tool_calls"):
+                    if key in item:
+                        context.trace_deliverables[key] = item[key]
             _accumulate_response_summary(item, context)
             yield item
     except Exception as e:

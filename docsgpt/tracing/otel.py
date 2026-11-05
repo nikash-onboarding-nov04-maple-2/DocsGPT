@@ -13,8 +13,9 @@ written as literals rather than imported from the semconv package. Prompt and
 tool content is exported only when
 ``OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`` opts in.
 
-Nothing here runs unless an OTel SDK is installed as the global provider (for
-example by launching under ``opentelemetry-instrument``).
+A configured Convergent destination attaches its SDK to the existing provider
+(or creates one if none exists). Without Convergent, export still requires an
+application-owned OTel SDK, e.g. ``opentelemetry-instrument``.
 """
 
 from __future__ import annotations
@@ -158,6 +159,9 @@ def export_trace(trace: Trace, tracer_provider: Any = None) -> Optional[str]:
     """
     if not settings.TRACES_OTEL_EXPORT or not trace.spans:
         return None
+    from docsgpt.tracing.convergent import configure
+
+    configure()
     from opentelemetry import trace as ot_trace
     from opentelemetry.trace import SpanKind, Status, StatusCode
 
@@ -180,13 +184,15 @@ def export_trace(trace: Trace, tracer_provider: Any = None) -> Optional[str]:
     for span in trace.spans:
         parent = exported.get(span.parent_id, root)
         attributes = dict(span.attributes)
-        if trace.conversation_id and span.kind in (KIND_LLM, KIND_TOOL):
+        if trace.conversation_id and span.kind in ("agent", KIND_LLM, KIND_TOOL):
             attributes.setdefault("gen_ai.conversation.id", trace.conversation_id)
         if span.status and span.status not in (STATUS_OK, STATUS_ERROR):
             attributes["docsgpt.status"] = span.status
         attributes = _attributes(attributes)
         if capture and span.previews:
             attributes.update(_preview_attributes(span.kind, span.previews))
+        if capture:
+            attributes.update(span.otel_content)
         otel_span = tracer.start_span(
             span.name,
             context=ot_trace.set_span_in_context(parent),

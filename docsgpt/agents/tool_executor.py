@@ -142,6 +142,12 @@ def finish_tool_span(span: Any, data: Dict[str, Any]) -> None:
     """
     if not span:
         return
+    from docsgpt.tracing.content import capture
+
+    capture(span, **{
+        "gen_ai.tool.call.arguments": data.get("arguments"),
+        "gen_ai.tool.call.result": data.get("result"),
+    })
     status = str(data.get("status") or "completed")
     span.set(
         **{

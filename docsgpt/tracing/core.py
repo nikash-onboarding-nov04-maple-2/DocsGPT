@@ -98,6 +98,7 @@ class Span:
         "name",
         "attributes",
         "previews",
+        "otel_content",
         "status",
         "error",
         "start_perf_ns",
@@ -121,6 +122,7 @@ class Span:
         self.name = name
         self.attributes: Dict[str, Any] = dict(attributes or {})
         self.previews: Dict[str, Any] = {}
+        self.otel_content: Dict[str, str] = {}
         self.status: Optional[str] = None
         self.error: Optional[str] = None
         self.start_perf_ns = time.perf_counter_ns()
