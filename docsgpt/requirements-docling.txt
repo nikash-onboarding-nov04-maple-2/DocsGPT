@@ -148,6 +148,8 @@ colorama==0.4.6 ; sys_platform == 'win32'
     #   typer
 colorlog==6.12.0
     # via rapidocr
+convergent-sdk==0.0.11
+    # via docsgpt
 croniter==6.2.4
     # via docsgpt
 cryptography==50.0.2
@@ -508,6 +510,7 @@ openpyxl==3.1.5
 opentelemetry-api==1.45.1
     # via
     #   anthropic
+    #   convergent-sdk
     #   daytona
     #   docsgpt
     #   fastmcp-slim
@@ -550,6 +553,7 @@ opentelemetry-exporter-otlp-proto-grpc==1.45.1
     # via opentelemetry-exporter-otlp
 opentelemetry-exporter-otlp-proto-http==1.45.1
     # via
+    #   convergent-sdk
     #   daytona
     #   opentelemetry-exporter-otlp
 opentelemetry-instrumentation==0.66b1
@@ -598,6 +602,7 @@ opentelemetry-proto==1.45.1
     #   opentelemetry-exporter-otlp-proto-http
 opentelemetry-sdk==1.45.1
     # via
+    #   convergent-sdk
     #   daytona
     #   opentelemetry-distro
     #   opentelemetry-exporter-otlp-common
@@ -605,6 +610,7 @@ opentelemetry-sdk==1.45.1
     #   opentelemetry-exporter-otlp-proto-http
 opentelemetry-semantic-conventions==0.66b1
     # via
+    #   convergent-sdk
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-asgi
@@ -687,6 +693,7 @@ proto-plus==1.29.0
     # via google-api-core
 protobuf==7.36.2
     # via
+    #   convergent-sdk
     #   google-api-core
     #   googleapis-common-protos
     #   onnxruntime
@@ -858,6 +865,7 @@ regex==2026.9.29
     #   transformers
 requests==2.34.2
     # via
+    #   convergent-sdk
     #   docling-core
     #   docling-slim
     #   docsgpt
@@ -1161,3 +1169,5 @@ xlsxwriter==3.3.0
     # via python-pptx
 yarl==1.25.1
     # via aiohttp
+zstandard==0.25.0
+    # via convergent-sdk

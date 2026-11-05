@@ -8,6 +8,7 @@ from threading import Event, Lock, Thread
 from time import monotonic
 from typing import Any, Callable, Iterable, Iterator
 
+from docsgpt.tracing import wrap as trace_wrap
 from docsgpt.core.run_budget import RunDeadlineExceeded, remaining_seconds
 
 
@@ -136,7 +137,7 @@ def timed_stream(factory: Callable[[], Iterator[Any]], *, first_token: float, st
                 close()
 
     context = copy_context()
-    reader = Thread(target=context.run, args=(produce,), name="llm-stream-reader", daemon=True)
+    reader = Thread(target=context.run, args=(trace_wrap(produce),), name="llm-stream-reader", daemon=True)
     reader.start()
     timeout = first_token
     try:

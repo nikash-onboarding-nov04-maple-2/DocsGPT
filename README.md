@@ -198,3 +198,44 @@ Project structure:
 ## License
 
 DocsGPT is [MIT licensed](LICENSE).
+
+### Convergent agent tracing
+
+DocsGPT can send its existing execution traces to Convergent without adding a
+second model/tool instrumentor. This covers `ClassicAgent`, `AgenticAgent`,
+`ResearchAgent`, `WorkflowAgent`, and all three workflow-node agent classes.
+The legacy `react` selection uses `ClassicAgent`.
+
+Create an ingestion API key in your [Convergent workspace settings](https://app.convergent.dev/workspace/settings),
+then set it **in the environment of each API and worker process**:
+
+```sh
+export CONVERGENT_API_KEY="<ingestion key>"
+# Optional: include prompts, answers, tool arguments/results and deliverables.
+export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=span_only
+```
+
+Run DocsGPT as usual. `TRACES_ENABLED` and `TRACES_OTEL_EXPORT` must remain enabled
+(their defaults). The release defaults to the installed DocsGPT version; set
+`CONVERGENT_RELEASE` to override it with a build identifier. Existing OTel
+providers, samplers, exporters and DocsGPT's database trace sink are retained.
+Spans are exported when the request's execution trace is flushed, not live as
+each token arrives. Standalone agent callers must use DocsGPT's `start_trace`,
+`activate` and `flush` lifecycle, just as the API and headless runner do.
+
+For local-only export, set `CONVERGENT_SPANS_DIR` to a writable directory instead
+of setting an API key. It writes `spans.jsonl`. Short-lived embedding programs
+should call `convergent.flush()` after flushing the DocsGPT trace and before exit.
+
+Content capture is off unless explicitly enabled. Opting in exports full text,
+including any sensitive information it contains, to **all** configured OTel
+exporters. It is not secret redaction. Binary/inline-file payloads are omitted
+from the new message attributes; this integration does not upload attachments or
+generated files to Convergent. Full message content is export-only, not added to
+DocsGPT's stored trace previews, and guardrail-blocked traces withhold it.
+
+Verification exercised all seven classes with scripted OpenAI-compatible replies,
+real response parsing, tool discovery/dispatch, a real Think tool call and a
+follow-up model request. The workflow also exercised a nested research agent.
+Local checks do not establish hosted ingestion, live-provider behavior, file
+uploads, or coverage of every provider, workflow branch, retry or approval path.
